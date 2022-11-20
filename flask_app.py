@@ -1,19 +1,17 @@
-from flask import Flask, render_template, Response
-import cv2
 import os
-import torch
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, SUPPRESS
+from pathlib import Path
+
+import cv2
 import pafy
 import yaml
-from argparse import Namespace
-
+from flask import Flask, render_template, Response
 from marshmallow_dataclass import class_schema
 
-from pathlib import Path
-from bytetrack_utils.bytetrack_params import InferenceParams
-from bytetrack_utils.bytetrack_funcs import BytetrackModel
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, SUPPRESS
 
-TRACKER = ''
+from utils.params import ServiceParams
+
+tracker = None
 
 app = Flask(__name__)
 
@@ -75,7 +73,7 @@ def gen_det_frames():  # generate frame by frame from camera
         # перед отправкой на модель меняем размер кадра.
         frame = cv2.resize(frame, (640, 480))
         # здесь мы получаем инференс
-        out_frame = TRACKER.online_inference(frame)
+        out_frame = tracker.online_inference(frame)
         det_ret, det_buffer = cv2.imencode('.jpg', out_frame)
         out_frame = det_buffer.tobytes()
         yield (b'--frame\r\n'
@@ -100,34 +98,6 @@ def index():
     return render_template('index.html')
 
 
-def run_bytetrack():
-    """
-    в случае указания bytetrack в аргументах запускаем bytetrack
-    """
-    global TRACKER
-    default_config_path = 'detection_models/bytetrack/bytetrack_conf.yaml'
-    if Path(default_config_path).exists():
-        # читаем yaml-конфиг
-        with open(default_config_path, "r") as input_stream:
-            schema = class_schema(InferenceParams)()
-            params = schema.load(yaml.safe_load(input_stream))
-            # на основе параметров инитим модель
-            TRACKER = BytetrackModel(params)
-    app.run(host='0.0.0.0', port=8132)
-
-
-def callback_run(args):
-    """
-    парсинг аргументов командной строки
-    """
-    global det_video_obj
-    # получаем видеопоток
-    det_video_obj = get_video_obj(URL_MODEL)
-    det_video_obj.set(cv2.CAP_PROP_FPS, 30)
-    if args.model == 'bytetrack':
-        run_bytetrack()
-
-
 def setup_parser(parser):
     parser.add_argument('-h', '--help', action='help', default=SUPPRESS,
                         help='list of options')
@@ -137,7 +107,7 @@ def setup_parser(parser):
                         choices=['bytetrack', 'iim'],
                         help='change model for run',
                         required=False)
-    parser.set_defaults(callback=callback_run)
+    parser.set_defaults()
 
 
 if __name__ == '__main__':
@@ -150,7 +120,42 @@ if __name__ == '__main__':
     setup_parser(parser)
     arguments = parser.parse_args()
     arguments.callback(arguments)
-    # raw_video_obj = get_video_obj(VIDEO_PATH)  # use 0 for web camera
-    # raw_video_obj = get_video_obj(URL_MODEL)  # use 0 for web camera
-    # raw_video_obj.set(cv2.CAP_PROP_FPS, 30)
-    # det_video_obj = get_video_obj(VIDEO_PATH)
+
+    default_config_path = 'config.yaml'
+    if Path(default_config_path).exists():
+        # читаем yaml-конфиг
+        with open(default_config_path, "r") as input_stream:
+            schema = class_schema(ServiceParams)()
+            service_params: ServiceParams = schema.load(yaml.safe_load(input_stream))
+
+            if service_params.use_model == "bytetrack":
+                from utils.bytetrack_funcs import BytetrackModel
+                from utils.bytetrack_params import InferenceParams, BytetrackParams
+
+                bytetrack_config_path = 'detection_models/bytetrack/config.yaml'
+                with open(default_config_path, "r") as stream:
+                    schema = class_schema(BytetrackParams)()
+                    params: BytetrackParams = schema.load(yaml.safe_load(stream))
+                    # на основе параметров инитим модель
+                    tracker = BytetrackModel(params)
+            elif service_params.use_model == "iim":
+                from detection_models.iim.misc.params import IimParams
+                from utils.iim_funcs import IimModel
+                iim_config_path = 'detection_models/iim/config.yaml'
+                with open(default_config_path, "r") as stream:
+                    schema = class_schema(IimParams)()
+                    params: IimParams = schema.load(yaml.safe_load(stream))
+                    # на основе параметров инитим модель
+                    tracker = IimModel(params)
+                pass
+            else:
+                raise ValueError(f"{params.use_model} model doesn't supported. "
+                                 f"The only options available are 'bytetrack' and 'iim'.")
+            service_params.model_params = params
+
+    #global det_video_obj
+    # получаем видеопоток
+    det_video_obj = get_video_obj(URL_MODEL)
+    det_video_obj.set(cv2.CAP_PROP_FPS, 30)
+
+    app.run(host='0.0.0.0', port=8132)

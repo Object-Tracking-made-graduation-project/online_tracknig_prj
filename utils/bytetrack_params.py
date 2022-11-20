@@ -1,11 +1,10 @@
 from dataclasses import dataclass, field
-from marshmallow import Schema, fields
-import torch
-import typing
+
+from utils.params import ModelParams
 
 
 @dataclass()
-class ModelParams:
+class BytetrackParams(ModelParams):
     aspect_ratio_thresh: float
     camid: int
     ckpt: str
