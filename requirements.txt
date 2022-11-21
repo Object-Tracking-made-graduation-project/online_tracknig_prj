@@ -1,0 +1,5 @@
+flask
+pafy
+youtube-dl
+pyyaml
+marshmallow-dataclass
