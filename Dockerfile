@@ -11,13 +11,13 @@ RUN pip3 install torch torchvision torchaudio --extra-index-url https://download
 
 RUN mkdir online_tracker
 COPY detection_models/bytetrack/requirements.txt online_tracker/detection_models/bytetrack/requirements.txt
-RUN pip install -r online_tracker/detection_models/bytetrack/requirements.txt
+RUN pip install -r /online_tracker/detection_models/bytetrack/requirements.txt
 
 COPY detection_models/iim/requirements.txt online_tracker/detection_models/iim/requirements.txt
-RUN pip install -r online_tracker/detection_models/iim/requirements.txt
+RUN pip install -r /online_tracker/detection_models/iim/requirements.txt
 
-COPY requirements.txt online_tracker/requirements.txt
-RUN pip install -r online_tracker/requirements.txt
+COPY requirements.txt /online_tracker/requirements.txt
+RUN pip install -r /online_tracker/requirements.txt
 
 RUN pip install cython
 RUN pip install cython_bbox
@@ -26,15 +26,15 @@ RUN pip install 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=Pyt
 RUN sed -i "s/self._ydl_info\['like_count'\]/0/g" /usr/local/lib/python3.8/dist-packages/pafy/backend_youtube_dl.py
 RUN sed -i "s/self._ydl_info\['dislike_count'\]/0/g" /usr/local/lib/python3.8/dist-packages/pafy/backend_youtube_dl.py
 
-
-COPY utils online_tracker/utils
-COPY detection_models online_tracker/detection_models
+COPY detection_models /online_tracker/detection_models
 
 # Bytrack section
 WORKDIR /online_tracker/detection_models/bytetrack
 RUN python3 setup.py develop
 ENV PYTHONPATH="${PYTHONPATH}:/online_tracker/detection_models/bytetrack:/online_tracker/detection_models/bytetrack/yolox"
 ENV PATH="./:${PATH}"
+
+COPY utils /online_tracker/utils
 
 WORKDIR /online_tracker
 COPY templates /online_tracker/templates

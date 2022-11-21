@@ -46,7 +46,7 @@ class BytetrackModel(BaseModel):
             )
         return online_im
 
-    def get_predictor(args):
+    def get_predictor(self, args):
         """
         функция получения предиктора
         """
