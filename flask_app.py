@@ -15,44 +15,32 @@ tracker = None
 
 app = Flask(__name__)
 
-URL = "https://www.youtube.com/embed/2wqpy036z24"
-URL_MODEL = "https://www.youtube.com/watch?v=2wqpy036z24"
-
 VIDEO_PATH = 'D:\\pycharm_projects\\made\\diploma\\docker_jupyter\\ByteTrack-main\\' \
              '1 эт. Б AromaCafe Зал 1_20221024-160000--20221024-160500.avi'
 
-raw_video_obj = ''
-# raw_video_obj = get_video_obj(URL_MODEL)
-# raw_video_obj.set(cv2.CAP_PROP_FPS, 30)
-det_video_obj = ''
-# det_video_obj = get_video_obj(URL_MODEL)
-# det_video_obj.set(cv2.CAP_PROP_FPS, 30)
+raw_video_obj = None
+det_video_obj = None
 
-detector = ''
-EXP = ''
-
-params = ''
+service_params: ServiceParams = None
 
 
-def get_video_obj(url):
+def get_video_obj(url, stream=0):
     """
     Creates a new video streaming object to extract video frame by frame to make prediction on.
     :return: opencv2 video capture object, with lowest quality frame available for video.
     """
     if not os.path.exists(url):
-        play = pafy.new(url).streams[-1]
+        play = pafy.new(url).streams[stream]
         assert play is not None
         return cv2.VideoCapture(play.url)
     else:
         return cv2.VideoCapture(url)
 
 
-def gen_frames():
-    """
-    здесь получаем кадр с потока и отсылаем его на форму
-    """
-    while True:
-        # объект определили заранее, теперь читаем кадр и отправляем на веб морду
+def gen_frames():  # generate frame by frame from camera
+    if not raw_video_obj:
+        raise ValueError("raw_video_obj is empty")
+    while raw_video_obj.isOpened():
         success, frame = raw_video_obj.read()  # read the camera frame
         if not success:
             break
@@ -67,11 +55,14 @@ def gen_det_frames():  # generate frame by frame from camera
     """
     здесь получаем кадр с потока, получаем по нему инференс с модели и отправляем на форму
     """
-    while True:
+
+    if not det_video_obj:
+        raise ValueError("det_video_obj is empty")
+    while det_video_obj.isOpened():
         # объект определили заранее, теперь читаем кадр и отправляем в модель
         ret_val, frame = det_video_obj.read()
         # перед отправкой на модель меняем размер кадра.
-        frame = cv2.resize(frame, (640, 480))
+        #frame = cv2.resize(frame, (640, 480))
         # здесь мы получаем инференс
         out_frame = tracker.online_inference(frame)
         det_ret, det_buffer = cv2.imencode('.jpg', out_frame)
@@ -84,12 +75,6 @@ def gen_det_frames():  # generate frame by frame from camera
 def det_video_feed():
     # Video streaming route. Put this in the src attribute of an img tag
     return Response(gen_det_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-
-# @app.route('/raw_video_feed')
-# def raw_video_feed():
-#     #Video streaming route. Put this in the src attribute of an img tag
-#     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @app.route('/')
@@ -110,6 +95,19 @@ def setup_parser(parser):
     parser.set_defaults()
 
 
+def init_video_objects():
+    """
+    парсинг аргументов командной строки
+    """
+    global raw_video_obj
+    global det_video_obj
+    # получаем видеопоток
+    raw_video_obj = get_video_obj(service_params.video_url, service_params.stream)
+    det_video_obj = get_video_obj(service_params.video_url, service_params.stream)
+    #det_video_obj.set(cv2.CAP_PROP_FPS, 30)
+    print("init_video_objects")
+
+
 if __name__ == '__main__':
     parser = ArgumentParser(
         prog="Test module for human detection",
@@ -119,7 +117,8 @@ if __name__ == '__main__':
     )
     setup_parser(parser)
     arguments = parser.parse_args()
-    arguments.callback(arguments)
+    parser.set_defaults()
+    #arguments.callback(arguments)
 
     default_config_path = 'config.yaml'
     if Path(default_config_path).exists():
@@ -142,7 +141,7 @@ if __name__ == '__main__':
                 from detection_models.iim.misc.params import IimParams
                 from utils.iim_funcs import IimModel
                 iim_config_path = 'detection_models/iim/config.yaml'
-                with open(default_config_path, "r") as stream:
+                with open(iim_config_path, "r") as stream:
                     schema = class_schema(IimParams)()
                     params: IimParams = schema.load(yaml.safe_load(stream))
                     # на основе параметров инитим модель
@@ -153,9 +152,6 @@ if __name__ == '__main__':
                                  f"The only options available are 'bytetrack' and 'iim'.")
             service_params.model_params = params
 
-    #global det_video_obj
-    # получаем видеопоток
-    det_video_obj = get_video_obj(URL_MODEL)
-    det_video_obj.set(cv2.CAP_PROP_FPS, 30)
+    init_video_objects()
 
     app.run(host='0.0.0.0', port=8132)

@@ -3,11 +3,11 @@ from collections import OrderedDict
 
 import torch
 
-from ..misc.params import IimModelParams
+from ..misc.params import IimParams
 from ..model.locator import Crowd_locator
 
 
-def load_model(model_params: IimModelParams):
+def load_model(model_params: IimParams):
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     os.environ["CUDA_VISIBLE_DEVICES"] = '{}'.format(model_params.gpu_id)
 
