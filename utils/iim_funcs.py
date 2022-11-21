@@ -10,8 +10,6 @@ from utils.params import ModelParams
 class IimModel(BaseModel):
     def __init__(self, model_params: ModelParams):
         self.config = model_params
-
-        #self.detector, self.exp = self.get_predictor(model_params)
         self.model = load_model(model_params)
 
     def online_inference(self, frame: np.ndarray) -> np.ndarray:
