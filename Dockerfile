@@ -37,10 +37,10 @@ ENV PYTHONPATH="${PYTHONPATH}:/online_tracker/detection_models/bytetrack:/online
 ENV PATH="./:${PATH}"
 
 WORKDIR /online_tracker
-COPY templates online_tracker/templates
-COPY flask_app.py online_tracker/flask_app.py
-COPY config.yaml online_tracker/config.yaml
+COPY templates /online_tracker/templates
+COPY flask_app.py /online_tracker/flask_app.py
+COPY config.yaml /online_tracker/config.yaml
 
-ENTRYPOINT [ "python", "flask_app.py"]
+ENTRYPOINT [ "python3", "flask_app.py"]
 
 

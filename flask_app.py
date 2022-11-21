@@ -109,6 +109,7 @@ def init_video_objects():
 
 
 if __name__ == '__main__':
+    print("Flask app started.")
     parser = ArgumentParser(
         prog="Test module for human detection",
         description="Test module for human detection",
