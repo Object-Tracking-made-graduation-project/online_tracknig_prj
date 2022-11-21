@@ -126,10 +126,14 @@ if __name__ == '__main__':
         with open(default_config_path, "r") as input_stream:
             schema = class_schema(ServiceParams)()
             service_params: ServiceParams = schema.load(yaml.safe_load(input_stream))
+            use_model = os.environ.get("use_model", "")
+            if not use_model:
+                print("Environment variable `use_model` is not set. It will be read from config.yaml")
+                use_model = service_params.use_model
 
-            if service_params.use_model == "bytetrack":
+            if use_model == "bytetrack":
                 from utils.bytetrack_funcs import BytetrackModel
-                from utils.bytetrack_params import InferenceParams, BytetrackParams
+                from utils.bytetrack_params import BytetrackParams
 
                 bytetrack_config_path = 'detection_models/bytetrack/config.yaml'
                 with open(default_config_path, "r") as stream:
@@ -137,7 +141,7 @@ if __name__ == '__main__':
                     params: BytetrackParams = schema.load(yaml.safe_load(stream))
                     # на основе параметров инитим модель
                     tracker = BytetrackModel(params)
-            elif service_params.use_model == "iim":
+            elif use_model == "iim":
                 from detection_models.iim.misc.params import IimParams
                 from utils.iim_funcs import IimModel
                 iim_config_path = 'detection_models/iim/config.yaml'
@@ -148,7 +152,7 @@ if __name__ == '__main__':
                     tracker = IimModel(params)
                 pass
             else:
-                raise ValueError(f"{params.use_model} model doesn't supported. "
+                raise ValueError(f"{use_model} model doesn't supported. "
                                  f"The only options available are 'bytetrack' and 'iim'.")
             service_params.model_params = params
 
