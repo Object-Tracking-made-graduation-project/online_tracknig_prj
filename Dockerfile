@@ -41,6 +41,6 @@ COPY templates /online_tracker/templates
 COPY flask_app.py /online_tracker/flask_app.py
 COPY config.yaml /online_tracker/config.yaml
 
-ENTRYPOINT [ "python3", "flask_app.py"]
+# ENTRYPOINT [ "python3", "flask_app.py"]
 
 

@@ -137,7 +137,7 @@ if __name__ == '__main__':
                 from utils.bytetrack_params import BytetrackParams
 
                 bytetrack_config_path = 'detection_models/bytetrack/config.yaml'
-                with open(default_config_path, "r") as stream:
+                with open(bytetrack_config_path, "r") as stream:
                     schema = class_schema(BytetrackParams)()
                     params: BytetrackParams = schema.load(yaml.safe_load(stream))
                     # на основе параметров инитим модель

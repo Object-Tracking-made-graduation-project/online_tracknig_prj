@@ -6,14 +6,16 @@ from detection_models.bytetrack.yolox.tracker.byte_tracker import BYTETracker
 from detection_models.bytetrack.yolox.tracking_utils.timer import Timer
 from detection_models.bytetrack.yolox.utils import fuse_model
 from detection_models.bytetrack.yolox.utils.visualize import plot_tracking
+from utils.bytetrack_params import BytetrackParams
 from utils.params import ModelParams
+from utils.funcs import BaseModel
 
 
 class BytetrackModel(BaseModel):
     """
     Класс модели Bytetrack. Здесь его инициализируем и апдейтим при инференсе
     """
-    def __init__(self, model_params: ModelParams):
+    def __init__(self, model_params: BytetrackParams):
         self.config = model_params
         self.detector, self.exp = self.get_predictor(model_params)
         self.model = BYTETracker(model_params, frame_rate=30)

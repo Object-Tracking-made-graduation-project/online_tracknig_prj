@@ -9,7 +9,7 @@ docker build -t tracking .
 ```
 Чтобы запустить образ для bytetrack:
 ```    
-docker run --rm -p 8132:8132 --gpus all -e use_model=bytetrack tracking
+docker run --rm -p 8132:8132 -e use_model=bytetrack tracking python3 flask_app.py
 ```
 
 
@@ -25,7 +25,7 @@ docker build -t tracking .
 
 Чтобы запустить образ для IIM:
 ```    
-docker run --rm -p 8132:8132 --gpus all -e use_model=iim tracking
+docker run --rm -p 8132:8132 -e use_model=iim tracking python3 flask_app.py
 ```
 
 
