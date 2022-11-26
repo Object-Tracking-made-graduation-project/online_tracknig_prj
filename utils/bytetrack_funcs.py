@@ -9,6 +9,8 @@ from detection_models.bytetrack.yolox.utils.visualize import plot_tracking
 from utils.bytetrack_params import BytetrackParams
 from utils.params import ModelParams
 from utils.funcs import BaseModel
+import time
+import sys
 
 
 class BytetrackModel(BaseModel):

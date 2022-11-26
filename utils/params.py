@@ -12,5 +12,6 @@ class ModelParams:
 class ServiceParams:
     use_model: str = "iim"
     video_url: str = field(default=URL_MODEL)
+    frames_num_before_show: int = 2
     stream: int = 0
     model_params: ModelParams = None
