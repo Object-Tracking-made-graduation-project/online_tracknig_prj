@@ -31,60 +31,6 @@ pool = ThreadPool(processes=1)
 service_params: ServiceParams = None
 
 
-class FileVideoStream:
-    def __init__(self, path, queueSize=128):
-        # initialize the file video stream along with the boolean
-        # used to indicate if the thread should be stopped or not
-        self.stream = cv2.VideoCapture(path)
-        self.stopped = False
-        self.frame = 0
-        # initialize the queue used to store frames read from
-        # the video file
-        self.Q = Queue(maxsize=queueSize)
-
-    def start(self):
-        # start a thread to read frames from the file video stream
-        t = Thread(target=self.update, daemon=True, args=())
-        # t = Thread(target=self.update, daemon=True, args=())
-        # t.daemon = True
-        t.start()
-        # t.join()
-        return self
-
-    def update(self):
-        # keep looping infinitely
-        while True:
-            # if the thread indicator variable is set, stop the
-            # thread
-            if self.stopped:
-                return
-            # otherwise, ensure the queue has room in it
-            if not self.Q.full():
-                # read the next frame from the file
-                (grabbed, frame) = self.stream.read()
-                # if the `grabbed` boolean is `False`, then we have
-                # reached the end of the video file
-                if not grabbed:
-                    self.stop()
-                    return
-                # add the frame to the queue
-                self.Q.put(frame)
-                # self.frame = frame
-
-    def read(self):
-        # return next frame in the queue
-        return 0, self.Q.get()
-        # return self.frame
-
-    def more(self):
-        # return True if there are still frames in the queue
-        return self.Q.qsize() > 0
-
-    def stop(self):
-        # indicate that the thread should be stopped
-        self.stopped = True
-
-
 def get_video_obj(url, stream=0):
     """
     Creates a new video streaming object to extract video frame by frame to make prediction on.
@@ -93,17 +39,10 @@ def get_video_obj(url, stream=0):
     if not os.path.exists(url):
         play = pafy.new(url).streams[stream]
         assert play is not None
-        # video_obj = FileVideoStream(play.url).start()
-        # video_obj = FileVideoStream(VIDEO_PATH).start()
         video_obj = cv2.VideoCapture(play.url)
-        # video_obj = cv2.VideoCapture(VIDEO_PATH)
-
         return video_obj
     else:
-        # video_obj = FileVideoStream(url).start()
-        # video_obj = FileVideoStream(VIDEO_PATH).start()
         video_obj = cv2.VideoCapture(url)
-        # video_obj = cv2.VideoCapture(VIDEO_PATH)
         return video_obj
 
 
@@ -125,6 +64,7 @@ async def get_frame():
     ret_val, frame = det_video_obj.read()
     return frame
 
+
 def gen_det_frames():  # generate frame by frame from camera
     """
     здесь получаем кадр с потока, получаем по нему инференс с модели и отправляем на форму
@@ -134,25 +74,15 @@ def gen_det_frames():  # generate frame by frame from camera
     if not det_video_obj:
         raise ValueError("det_video_obj is empty")
 
-    # while det_video_obj.more():
     loop = asyncio.new_event_loop()
     while det_video_obj.isOpened():
-        # loop = asyncio.new_event_loop()
         # объект определили заранее, теперь читаем кадр и отправляем в модель
-        #frame_start = time.time()
-        # frame = det_video_obj.read()
-        ret_val, frame = det_video_obj.read()
-        #print(f'OPENCV elapsed time: {time.time() - frame_start}')
+        frame = loop.run_until_complete(get_frame())
         if counter == service_params.frames_num_before_show:
             counter = 0
             # перед отправкой на модель меняем размер кадра.
             # здесь мы получаем инференс
-            inf_start = time.time()
-            frame = loop.run_until_complete(get_frame())
-            # out_frame = loop.run_until_complete(tracker.online_inference(frame))
-            # loop.close()
             out_frame = tracker.online_inference(frame)
-            #print(f'inference elapsed time: {time.time() - inf_start}')
             det_ret, det_buffer = cv2.imencode('.jpg', out_frame)
             out_frame = det_buffer.tobytes()
             yield (b'--frame\r\n'
@@ -213,7 +143,6 @@ def init_video_objects():
     # получаем видеопоток
     # raw_video_obj = get_video_obj(service_params.video_url, service_params.stream)
     det_video_obj = get_video_obj(service_params.video_url, service_params.stream)
-    # et_video_obj = FileVideoStream(service_params.video_url, service_params.stream)#.start()
     # det_video_obj.set(cv2.CAP_PROP_FPS, 30)
     print("init_video_objects")
 

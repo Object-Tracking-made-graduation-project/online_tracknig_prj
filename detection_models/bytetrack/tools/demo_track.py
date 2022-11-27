@@ -167,9 +167,7 @@ class Predictor(object):
 
             with torch.no_grad():
                 timer.tic()
-                timer2 = time.time()
                 outputs = self.model(img)
-                print(f'inference time: {time.time() - timer2}')
                 if self.decoder is not None:
                     outputs = self.decoder(outputs, dtype=outputs.type())
                 outputs = postprocess(
