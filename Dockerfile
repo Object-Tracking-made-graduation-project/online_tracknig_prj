@@ -38,6 +38,7 @@ COPY utils /online_tracker/utils
 
 WORKDIR /online_tracker
 COPY templates /online_tracker/templates
+COPY static /online_tracker/static
 COPY flask_app.py /online_tracker/flask_app.py
 COPY config.yaml /online_tracker/config.yaml
 
