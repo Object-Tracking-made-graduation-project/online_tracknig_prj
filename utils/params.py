@@ -38,6 +38,6 @@ class ServiceParams:
     frames_num_before_show: int = 2
     stream: int = 0
     interval: Dict[str, int] = field(
-        default_factory=lambda: {Mode.ORIGINAL: 0.100, Mode.IIM: 0.5, Mode.BYTETRACK: 1.000})
+        default_factory=lambda: {Mode.ORIGINAL: 0.100, Mode.IIM: 0.02, Mode.BYTETRACK: 0.02})
     trackers: Dict[str, BaseModel] = field(default_factory=lambda: dict())
 

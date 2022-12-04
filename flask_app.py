@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import sys
 import time
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, SUPPRESS
 from multiprocessing.pool import ThreadPool
@@ -43,6 +44,7 @@ logger.addHandler(f_handler)
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
+UPLOAD_FOLDER_NAME = 'uploads'
 video_url = ''
 
 video_capture: cv2.VideoCapture = None
@@ -75,7 +77,7 @@ async def get_frame():
 
 def generate_frames():  # generate frame by frame from camera
     global real_time_s, video_time_s, video_capture
-    # loop = asyncio.new_event_loop()
+    loop = asyncio.new_event_loop()
     while True:
 
         if video_capture is not None:
@@ -99,9 +101,9 @@ def generate_frames():  # generate frame by frame from camera
                                 continue
 
                             logger.debug("time_s %f", time_s)
-                            # frame = loop.run_until_complete(get_frame())
-                            success, frame = video_capture.retrieve()
-                            # success = True
+                            frame = loop.run_until_complete(get_frame())
+                            #success, frame = video_capture.retrieve()
+                            success = True
                             if success:
                                 tracker = service_params.trackers.get(current_mode, None)
                                 if tracker is not None:
@@ -132,28 +134,30 @@ def gen_frames():
     """
     global video_capture
     counter = 0
-    if not video_capture:
-        raise ValueError("video_capture is empty")
+    #if not video_capture:
+        #raise ValueError("video_capture is empty")
 
     loop = asyncio.new_event_loop()
-    while video_capture.isOpened():
-        # объект определили заранее, теперь читаем кадр и отправляем в модель
-        frame = loop.run_until_complete(get_frame())
-        if counter == service_params.frames_num_before_show:
-            counter = 0
-            # перед отправкой на модель меняем размер кадра.
-            # здесь мы получаем инференс
-            tracker = service_params.trackers.get(current_mode, None)
-            if tracker is not None:
-                out_frame = tracker.online_inference(frame)
+    while True:
+        if video_capture is not None:
+            # while video_capture.isOpened():
+            # объект определили заранее, теперь читаем кадр и отправляем в модель
+            frame = loop.run_until_complete(get_frame())
+            if counter == service_params.frames_num_before_show:
+                counter = 0
+                # перед отправкой на модель меняем размер кадра.
+                # здесь мы получаем инференс
+                tracker = service_params.trackers.get(current_mode, None)
+                if tracker is not None:
+                    out_frame = tracker.online_inference(frame)
+                else:
+                    out_frame = frame
+                ret, buffer = cv2.imencode('.jpg', out_frame)
+                out_frame = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + out_frame + b'\r\n')  # concat frame one by one and show result
             else:
-                out_frame = frame
-            ret, buffer = cv2.imencode('.jpg', out_frame)
-            out_frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + out_frame + b'\r\n')  # concat frame one by one and show result
-        else:
-            counter += 1
+                counter += 1
 
 
 @app.route('/ping')
@@ -166,13 +170,28 @@ def ping():
 def video_feed():
     # Video streaming route. Put this in the src attribute of an img tag
     generator = generate_frames()   # здесь используется не асинхронная версия
+    #generator = gen_frames()   # здесь используется асинхронная версия
     return Response(generator, mimetype='multipart/x-mixed-replace; boundary=frame')
+
+def parse_request(request_obj):
+    if len(request_obj.files) > 0:
+        upload_path = f'{os.path.dirname(sys.argv[0])}/{UPLOAD_FOLDER_NAME}'
+        if not os.path.exists(upload_path):
+            os.makedirs(upload_path)
+        f = request_obj.files['file']
+        fname = f.filename
+        upload_path = f'{upload_path}/{fname}'
+        f.save(upload_path)
+        return upload_path
+    elif len(request_obj.json) > 0:
+        return request_obj.json['video_url']
 
 
 @app.route('/init', methods=["POST"])
 def init():
     global video_url, video_capture, real_time_s, video_time_s
-    video_url = request.json['video_url']
+    video_url = parse_request(request)
+    #video_url = request.json['video_url']
     print(f"{video_url} is being processed.")
     if video_capture is not None:
         video_capture.release()
