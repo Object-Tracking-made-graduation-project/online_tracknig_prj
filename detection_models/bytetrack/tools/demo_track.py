@@ -147,33 +147,34 @@ class Predictor(object):
 
     def inference(self, img, timer):
         img_info = {"id": 0}
-        if isinstance(img, str):
-            img_info["file_name"] = osp.basename(img)
-            img = cv2.imread(img)
-        else:
-            img_info["file_name"] = None
+        if img is not None:
+            if isinstance(img, str):
+                img_info["file_name"] = osp.basename(img)
+                img = cv2.imread(img)
+            else:
+                img_info["file_name"] = None
 
-        height, width = img.shape[:2]
-        img_info["height"] = height
-        img_info["width"] = width
-        img_info["raw_img"] = img
+            height, width = img.shape[:2]
+            img_info["height"] = height
+            img_info["width"] = width
+            img_info["raw_img"] = img
 
-        img, ratio = preproc(img, self.test_size, self.rgb_means, self.std)
-        img_info["ratio"] = ratio
-        img = torch.from_numpy(img).unsqueeze(0).float().to(self.device)
-        if self.fp16:
-            img = img.half()  # to FP16
+            img, ratio = preproc(img, self.test_size, self.rgb_means, self.std)
+            img_info["ratio"] = ratio
+            img = torch.from_numpy(img).unsqueeze(0).float().to(self.device)
+            if self.fp16:
+                img = img.half()  # to FP16
 
-        with torch.no_grad():
-            timer.tic()
-            outputs = self.model(img)
-            if self.decoder is not None:
-                outputs = self.decoder(outputs, dtype=outputs.type())
-            outputs = postprocess(
-                outputs, self.num_classes, self.confthre, self.nmsthre
-            )
-            #logger.info("Infer time: {:.4f}s".format(time.time() - t0))
-        return outputs, img_info
+            with torch.no_grad():
+                timer.tic()
+                outputs = self.model(img)
+                if self.decoder is not None:
+                    outputs = self.decoder(outputs, dtype=outputs.type())
+                outputs = postprocess(
+                    outputs, self.num_classes, self.confthre, self.nmsthre
+                )
+                #logger.info("Infer time: {:.4f}s".format(time.time() - t0))
+            return outputs, img_info
 
 
 def image_demo(predictor, vis_folder, current_time, args):

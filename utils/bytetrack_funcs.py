@@ -7,8 +7,7 @@ from detection_models.bytetrack.yolox.tracking_utils.timer import Timer
 from detection_models.bytetrack.yolox.utils import fuse_model
 from detection_models.bytetrack.yolox.utils.visualize import plot_tracking
 from utils.bytetrack_params import BytetrackParams
-from utils.params import ModelParams
-from utils.funcs import BaseModel
+from utils.params import BaseModel
 
 
 class BytetrackModel(BaseModel):

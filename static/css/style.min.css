@@ -1,0 +1,361 @@
+*, :after, :before {
+    box-sizing: border-box
+}
+
+* {
+    margin: 0;
+    padding: 0
+}
+
+html {
+    scroll-behavior: smooth
+}
+
+body {
+    font: 14px/22px open_sans, Arial, sans-serif;
+    color: #000;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%
+}
+
+a, body, div, footer, h1, h2, h3, h4, h5, h6, header, html, img, li, nav, p, section, span, ul {
+    margin: 0;
+    padding: 0;
+    border: 0
+}
+
+footer, header, nav, section {
+    display: block
+}
+
+ol, ul {
+    list-style: none
+}
+
+a, a:active, a:focus, a:hover, a:visited {
+    text-decoration: none;
+    outline: none;
+    transition: .3s
+}
+
+img, picture {
+    display: block;
+    height: auto;
+    width: 100%
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #0c0c0c;
+    display: block
+}
+
+button {
+    display: block;
+    transition: .3s;
+    background-color: transparent;
+    border: none;
+    cursor: pointer
+}
+
+body.lock {
+    height: 100%;
+    overflow: hidden !important
+}
+
+.main-wrapper, body.lock {
+    width: 100%;
+    position: relative
+}
+
+.main-wrapper {
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    min-height: 100%;
+    overflow: hidden;
+    margin: 0 auto
+}
+
+.main-wrapper main {
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto
+}
+
+.container {
+    max-width: 1060px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 80px
+}
+
+.d-none {
+    display: none !important
+}
+
+.main {
+    background-color: #8ba4df;
+    height: 100vh;
+    overflow: auto;
+    padding-top: 100px;
+    padding-bottom: 100px
+}
+
+.title {
+    font-family: Montserrat, sans-serif;
+    font-weight: 600;
+    line-height: 130%;
+    margin-bottom: 40px
+}
+
+.title-h1 {
+    font-size: 32px;
+    color: #ffffff;
+}
+
+
+.title-h3 {
+    font-size: 20px;
+    line-height: 36px;
+    color: #ffffff;
+    background: #06266f;
+}
+
+.bl-search {
+    margin-bottom: 30px
+}
+
+.bl-search svg {
+    width: 24px;
+    height: 24px
+}
+
+.bl-search svg path {
+    fill: #333
+}
+
+.bl-search form {
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-direction: row;
+    flex-direction: row
+}
+
+.input {
+    width: 100%;
+    position: relative;
+    margin-right: 20px
+}
+
+.input input {
+    display: block;
+    font-family: Montserrat, sans-serif;
+    font-size: 16px;
+    line-height: 120%;
+    font-weight: 600;
+    padding: 10px;
+    padding-left: 15px;
+    padding-right: 35px;
+    width: 100%;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    color: #333;
+    transition: .3s;
+    height: 40px
+}
+
+.input input:focus {
+    z-index: 1;
+    box-shadow: 0 0 10px rgba(0, 0, 0, .25)
+}
+
+.input input::-webkit-input-placeholder {
+    font-family: Montserrat, sans-serif;
+    font-size: 16px;
+    line-height: 120%;
+    font-weight: 400;
+    color: #ccc
+}
+
+.input input::-moz-placeholder {
+    font-family: Montserrat, sans-serif;
+    font-size: 16px;
+    line-height: 120%;
+    font-weight: 400;
+    color: #ccc
+}
+
+.input input::placeholder {
+    font-family: Montserrat, sans-serif;
+    font-size: 16px;
+    line-height: 120%;
+    font-weight: 400;
+    color: #ccc
+}
+
+.input input:-ms-input-placeholder, .input input::-ms-input-placeholder {
+    font-family: Montserrat, sans-serif;
+    font-size: 16px;
+    line-height: 120%;
+    font-weight: 400;
+    color: #ccc
+}
+
+.btn-clear {
+    width: 40px;
+    height: 40px;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-pack: center;
+    justify-content: center;
+    -ms-flex-align: center;
+    align-items: center;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    pointer-events: none
+}
+
+.btn-clear.active {
+    opacity: 1;
+    pointer-events: all
+}
+
+.bl-btns {
+    -ms-flex-direction: row;
+    flex-direction: row;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    margin-bottom: 40px
+}
+
+.bl-btns, .btn {
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-align: center;
+    align-items: center
+}
+
+.btn {
+    -ms-flex-pack: center;
+    justify-content: center;
+    font-family: Montserrat, sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 100%;
+    text-align: center;
+    background-color: #fff;
+    padding: 5px 20px;
+    min-width: 200px;
+    height: 40px;
+    text-transform: uppercase;
+    border: 2px solid #fff;
+    border-radius: 5px
+}
+
+.btn-search, .btn:hover {
+    background-color: #06266f;
+    border: 2px solid #06266f;
+    color: #fff;
+    margin-left: 15px;
+}
+
+.btn-search:hover {
+    background-color: #fff;
+    color: #06266f;
+    border: 2px solid #06266f
+}
+
+.bl-frames {
+    overflow: hidden;
+    border-radius: 10px;
+    padding: 30px;
+    background-color: #fff
+}
+
+.bl-frames .frame-item {
+    position: relative;
+    padding-top: 56.25%;
+    overflow: hidden;
+    border-radius: 5px
+}
+
+.bl-frames iframe {
+    position: absolute;
+    display: block;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%
+}
+
+@media (max-width: 1024px) {
+    .container {
+        padding: 0 42px
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 30px
+    }
+}
+
+@media (max-width: 700px) {
+    .btn {
+        min-width: 140px
+    }
+}
+
+@media (max-width: 500px) {
+    .main {
+        padding-top: 80px;
+        padding-bottom: 80px
+    }
+
+    .title {
+        margin-bottom: 25px
+    }
+
+    .title-h1 {
+        font-size: 24px
+    }
+
+    .bl-search form {
+        -ms-flex-direction: column;
+        flex-direction: column
+    }
+
+    .input {
+        margin-right: 0;
+        margin-bottom: 20px
+    }
+
+    .bl-btns {
+        -ms-flex-direction: column;
+        flex-direction: column;
+        margin-bottom: 30px
+    }
+
+    .btn {
+        min-width: auto;
+        width: 100%;
+        margin-bottom: 20px;
+        font-size: 16px
+    }
+
+    .bl-frames {
+        padding: 5px
+    }
+}
+
+@media (max-width: 375px) {
+    .container {
+        padding: 0 15px
+    }
+}
