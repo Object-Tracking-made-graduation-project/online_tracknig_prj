@@ -5,6 +5,7 @@ import sys
 import time
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, SUPPRESS
 from multiprocessing.pool import ThreadPool
+from pathlib import Path
 
 import cv2
 import pafy
@@ -17,7 +18,6 @@ app = Flask(__name__)
 
 VIDEO_PATH = 'D:\\pycharm_projects\\made\\diploma\\docker_jupyter\\' \
              '1 эт. Б AromaCafe Зал 1_20221024-160000--20221024-160500.avi'
-
 
 pool = ThreadPool(processes=1)
 
@@ -41,7 +41,6 @@ f_handler.setFormatter(f_format)
 logger.addHandler(c_handler)
 logger.addHandler(f_handler)
 
-
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
 UPLOAD_FOLDER_NAME = 'uploads'
@@ -58,11 +57,16 @@ current_mode: Mode = Mode.ORIGINAL
 def get_video_obj(url, stream=-1):
     """
     Creates a new video streaming object to extract video frame by frame to make prediction on.
-    :return: opencv2 video capture object, with lowest quality frame available for video.
+    :return: opencv2 video capture object.
     """
     if not os.path.exists(url):
-        play = pafy.new(url).streams[stream]
-        assert play is not None
+        pafy_obj = pafy.new(url)
+
+        if stream >= len(pafy_obj.streams):
+            logger.warning("Stream %d doesn't exist. It will be used as -1.")
+            stream = -1
+        play = pafy_obj.streams[stream]
+        assert play is not None, f"Can't extract videostream from {url}"
         video_obj = cv2.VideoCapture(play.url)
         return video_obj
     else:
@@ -79,10 +83,7 @@ def generate_frames():  # generate frame by frame from camera
     global real_time_s, video_time_s, video_capture
     loop = asyncio.new_event_loop()
     while True:
-
         if video_capture is not None:
-            # fps = video_capture.get(cv2.CAP_PROP_FPS)
-
             interval = service_params.interval.get(current_mode, 0.)
             if interval <= 0:
                 logger.warning("interval %f s", interval)
@@ -102,7 +103,7 @@ def generate_frames():  # generate frame by frame from camera
 
                             logger.debug("time_s %f", time_s)
                             frame = loop.run_until_complete(get_frame())
-                            #success, frame = video_capture.retrieve()
+                            # success, frame = video_capture.retrieve()
                             success = True
                             if success:
                                 tracker = service_params.trackers.get(current_mode, None)
@@ -113,14 +114,14 @@ def generate_frames():  # generate frame by frame from camera
                                 real_time_s = cur_time_s
                                 video_time_s = time_s
                                 yield (b'--frame\r\n'
-                                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
+                                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
                         else:
                             logger.warning("not grabbed")
                     except Exception as e:
                         logger.error(str(e))
                 else:
-                    logger.warning('videocapture is closed')
+                    logger.warning('videocapture is closed. Trying to open it again.')
                     video_capture = get_video_obj(video_url)
             else:
                 if interval - diff_s < 30.:
@@ -134,8 +135,8 @@ def gen_frames():
     """
     global video_capture
     counter = 0
-    #if not video_capture:
-        #raise ValueError("video_capture is empty")
+    # if not video_capture:
+    # raise ValueError("video_capture is empty")
 
     loop = asyncio.new_event_loop()
     while True:
@@ -169,36 +170,52 @@ def ping():
 @app.route('/video_feed')
 def video_feed():
     # Video streaming route. Put this in the src attribute of an img tag
-    generator = generate_frames()   # здесь используется не асинхронная версия
-    #generator = gen_frames()   # здесь используется асинхронная версия
+    generator = generate_frames()  # здесь используется не асинхронная версия
+    # generator = gen_frames()   # здесь используется асинхронная версия
     return Response(generator, mimetype='multipart/x-mixed-replace; boundary=frame')
 
-def parse_request(request_obj):
+
+def parse_request_and_upload(request_obj):
     if len(request_obj.files) > 0:
-        upload_path = f'{os.path.dirname(sys.argv[0])}/{UPLOAD_FOLDER_NAME}'
-        if not os.path.exists(upload_path):
+        upload_path = Path(os.getcwd()) / UPLOAD_FOLDER_NAME
+        if not upload_path.exists():
             os.makedirs(upload_path)
         f = request_obj.files['file']
-        fname = f.filename
-        upload_path = f'{upload_path}/{fname}'
-        f.save(upload_path)
-        return upload_path
+        file_path = upload_path / f.filename
+        f.save(file_path)
+        logger.info("File saved to %s", str(file_path))
+        return str(file_path)
     elif len(request_obj.json) > 0:
-        return request_obj.json['video_url']
+        url = request_obj.json['video_url']
+        if 'youtube.com' not in url:
+            raise ValueError("Only links to youtube are supported")
+        return url
 
 
 @app.route('/init', methods=["POST"])
 def init():
     global video_url, video_capture, real_time_s, video_time_s
-    video_url = parse_request(request)
-    #video_url = request.json['video_url']
-    print(f"{video_url} is being processed.")
-    if video_capture is not None:
-        video_capture.release()
-    video_capture = get_video_obj(video_url)
-    real_time_s = time.time()
-    video_time_s = 0.
-    return Response(f"{video_url} has been initialized")
+    response_message = "Initializing..."
+    status = 200
+    try:
+        video_url = parse_request_and_upload(request)
+        print(f"{video_url} is being processed.")
+        if video_capture is not None and video_capture.isOpened():
+            video_capture.release()
+        video_capture = get_video_obj(video_url)
+        real_time_s = time.time()
+        video_time_s = 0.
+        if video_capture.isOpened():
+            response_message = f"{video_url} has been initialized."
+        else:
+            raise ValueError(f"Can't open file {video_url}")
+
+    except Exception as exc:
+        logger.error("Error while init: %s", str(exc))
+        response_message = f"Error while initializing {video_url}:\n {str(exc)}"
+        status = 503
+
+    return Response(response_message, status=status)
 
 
 @app.route('/')
