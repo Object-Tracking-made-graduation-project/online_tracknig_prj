@@ -9,6 +9,7 @@ from utils.params import ServiceParams, Mode
 
 
 def read_configs():
+    trackers = {}
     config_path = 'config.yaml'
     if Path(config_path).exists():
         # читаем yaml-конфиг
@@ -33,7 +34,7 @@ def read_configs():
                             schema = class_schema(IimParams)()
                             params: IimParams = schema.load(yaml.safe_load(stream))
 
-                            service_params.trackers[Mode.IIM] = IimModel(params)
+                            trackers[Mode.IIM] = IimModel(params)
                     else:
                         logging.error("File '%s' doesn't exist", iim_config_path)
                 elif model == "bytetrack":
@@ -45,7 +46,7 @@ def read_configs():
                         with open(bytetrack_config_path, "r") as stream:
                             schema = class_schema(BytetrackParams)()
                             params: BytetrackParams = schema.load(yaml.safe_load(stream))
-                            service_params.trackers[Mode.BYTETRACK] = BytetrackModel(params)
+                            trackers[Mode.BYTETRACK] = BytetrackModel(params)
                     else:
                         logging.error("File '%s' doesn't exist", bytetrack_config_path)
                 else:
@@ -55,4 +56,4 @@ def read_configs():
         logging.error("File '%s' doesn't exist", config_path)
         raise ValueError("Config file is absent")
 
-    return service_params
+    return service_params, trackers

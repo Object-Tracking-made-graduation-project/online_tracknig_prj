@@ -1,2 +1,4 @@
 weight_path: "./detection_models/iim/weights/FDST-HR.pth"
 gpu_id: "0"
+highlight_heads: false
+smoothing_queue_size: 10

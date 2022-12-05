@@ -53,6 +53,8 @@ video_time_s: float = None
 real_time_s: float = None
 current_mode: Mode = Mode.ORIGINAL
 
+trackers = dict()
+
 
 def get_video_obj(url, stream=-1):
     """
@@ -106,7 +108,7 @@ def generate_frames():  # generate frame by frame from camera
                             # success, frame = video_capture.retrieve()
                             success = True
                             if success:
-                                tracker = service_params.trackers.get(current_mode, None)
+                                tracker = trackers.get(current_mode, None)
                                 if tracker is not None:
                                     frame = tracker.online_inference(frame)
                                 ret, buffer = cv2.imencode('.jpg', frame)
@@ -146,9 +148,7 @@ def gen_frames():
             frame = loop.run_until_complete(get_frame())
             if counter == service_params.frames_num_before_show:
                 counter = 0
-                # перед отправкой на модель меняем размер кадра.
-                # здесь мы получаем инференс
-                tracker = service_params.trackers.get(current_mode, None)
+                tracker = trackers.get(current_mode, None)
                 if tracker is not None:
                     out_frame = tracker.online_inference(frame)
                 else:
@@ -235,5 +235,5 @@ def set_mode(mode: str):
 if __name__ == '__main__':
     print("Flask app started.")
 
-    service_params = read_configs()
+    service_params, trackers = read_configs()
     app.run(host='0.0.0.0', port=8132)

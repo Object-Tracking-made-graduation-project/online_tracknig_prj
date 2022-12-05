@@ -10,6 +10,8 @@ class IimParams(ModelParams):
     weight_path: str
     gpu_id: str = '0'
     netName: str = 'HR_Net'
+    highlight_heads: bool = False
+    smoothing_queue_size: int = 10
 
 
 @dataclass()
