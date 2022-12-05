@@ -33,11 +33,8 @@ class Mode(IntEnum):
 
 @dataclass()
 class ServiceParams:
-    video_url: str = URL_MODEL
     use_models: str = field(default_factory=lambda: "iim,bytetrack")
     frames_num_before_show: int = 2
     stream: int = 0
-    interval: Dict[str, int] = field(
+    interval: Dict[int, float] = field(
         default_factory=lambda: {Mode.ORIGINAL: 0.100, Mode.IIM: 0.02, Mode.BYTETRACK: 0.02})
-    trackers: Dict[str, BaseModel] = field(default_factory=lambda: dict())
-
