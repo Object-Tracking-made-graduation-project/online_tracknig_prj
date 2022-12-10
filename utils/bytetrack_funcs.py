@@ -19,7 +19,7 @@ class BytetrackModel(BaseModel):
         self.detector, self.exp = self.get_predictor(model_params)
         self.model = BYTETracker(model_params, frame_rate=30)
 
-    def online_inference(self, frame):
+    def online_inference(self, frame, video_mask):
         """
         функция для инференса bytetrack
         """
@@ -41,7 +41,7 @@ class BytetrackModel(BaseModel):
                     online_scores.append(t.score)
             timer.toc()
             online_im = plot_tracking(
-                img_info['raw_img'], online_tlwhs, online_ids, frame_id=frame_id + 1, fps=1. / timer.average_time
+                img_info['raw_img'], online_tlwhs, online_ids, video_mask, frame_id=frame_id + 1, fps=1. / timer.average_time
             )
         return online_im
 

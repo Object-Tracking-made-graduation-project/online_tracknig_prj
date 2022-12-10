@@ -19,6 +19,8 @@ app = Flask(__name__)
 VIDEO_PATH = 'D:\\pycharm_projects\\made\\diploma\\docker_jupyter\\' \
              '1 эт. Б AromaCafe Зал 1_20221024-160000--20221024-160500.avi'
 
+VIDEO_MASK = None
+
 pool = ThreadPool(processes=1)
 
 service_params: ServiceParams = None
@@ -82,6 +84,7 @@ async def get_frame():
 def generate_frames():  # generate frame by frame from camera
     global real_time_s, video_time_s, video_capture
     loop = asyncio.new_event_loop()
+    debug = True
     while True:
         if video_capture is not None:
             interval = service_params.interval.get(current_mode, 0.)
@@ -103,12 +106,15 @@ def generate_frames():  # generate frame by frame from camera
 
                             logger.debug("time_s %f", time_s)
                             frame = loop.run_until_complete(get_frame())
-                            # success, frame = video_capture.retrieve()
+                            if debug:
+                                cv2.imwrite('frame.png', frame)
+                                debug = False
+                            #success, frame = video_capture.retrieve()
                             success = True
                             if success:
                                 tracker = service_params.trackers.get(current_mode, None)
                                 if tracker is not None:
-                                    frame = tracker.online_inference(frame)
+                                    frame = tracker.online_inference(frame, VIDEO_MASK)
                                 ret, buffer = cv2.imencode('.jpg', frame)
                                 frame = buffer.tobytes()
                                 real_time_s = cur_time_s
@@ -150,7 +156,7 @@ def gen_frames():
                 # здесь мы получаем инференс
                 tracker = service_params.trackers.get(current_mode, None)
                 if tracker is not None:
-                    out_frame = tracker.online_inference(frame)
+                    out_frame = tracker.online_inference(frame, VIDEO_MASK)
                 else:
                     out_frame = frame
                 ret, buffer = cv2.imencode('.jpg', out_frame)
@@ -165,6 +171,39 @@ def gen_frames():
 def ping():
     """Video streaming home page."""
     return Response("It works!")
+
+
+@app.route('/load_mask', methods=["POST"])
+def load_inference_mask():
+    """
+    Функция загрузки маски
+    """
+    global VIDEO_MASK
+    try:
+        img_path = parse_request_and_upload(request)
+        VIDEO_MASK = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+        response_message = f"mask loaded."
+        logger.info(response_message)
+        status = 200
+    except Exception as e:
+        logger.error("Error on mask load: %s", str(e))
+        response_message = f"Error on mask load:\n {str(e)}"
+        status = 503
+    return Response(response_message, status=status)
+
+
+@app.route('/clear_mask', methods=["POST"])
+def clear_mask():
+    """
+    Функция очиски маски
+    """
+    global VIDEO_MASK
+    VIDEO_MASK = None
+    response_message = 'mask deleted'
+    logger.info(response_message)
+    status = 200
+    return Response(response_message, status=status)
+
 
 
 @app.route('/video_feed')
@@ -194,7 +233,7 @@ def parse_request_and_upload(request_obj):
 
 @app.route('/init', methods=["POST"])
 def init():
-    global video_url, video_capture, real_time_s, video_time_s
+    global video_url, video_capture, real_time_s, video_time_s, VIDEO_MASK
     response_message = "Initializing..."
     status = 200
     try:
