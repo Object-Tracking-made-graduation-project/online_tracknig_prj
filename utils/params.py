@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import Dict, List
 
-# from utils.funcs import BaseModel
 import numpy as np
 
 URL_MODEL = "https://www.youtube.com/watch?v=2wqpy036z24"
@@ -18,7 +17,7 @@ class BaseModel:
     def __init__(self, model_params: ModelParams):
         pass
 
-    def online_inference(self, frame: np.ndarray) -> np.ndarray:
+    def online_inference(self, frame: np.ndarray, video_mask: np.ndarray = None) -> np.ndarray:
         """
         функция для инференса
         """
