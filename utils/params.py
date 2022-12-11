@@ -17,10 +17,16 @@ class BaseModel:
     def __init__(self, model_params: ModelParams):
         pass
 
+    def name(self):
+        return "BaseModel"
+
     def online_inference(self, frame: np.ndarray, video_mask: np.ndarray = None) -> np.ndarray:
         """
         функция для инференса
         """
+        pass
+
+    def reset(self, *args, **kwargs):
         pass
 
 

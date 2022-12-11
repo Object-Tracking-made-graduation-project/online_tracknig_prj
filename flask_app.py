@@ -56,6 +56,7 @@ real_time_s: float = None
 current_mode: Mode = Mode.ORIGINAL
 
 trackers = dict()
+reset = True
 
 
 def get_video_obj(url, stream=-1):
@@ -84,7 +85,7 @@ async def get_frame():
 
 
 def generate_frames():  # generate frame by frame from camera
-    global real_time_s, video_time_s, video_capture
+    global real_time_s, video_time_s, video_capture, reset
     loop = asyncio.new_event_loop()
     debug = True
     while True:
@@ -95,18 +96,17 @@ def generate_frames():  # generate frame by frame from camera
 
             cur_time_s = time.time()
             diff_s = cur_time_s - real_time_s
-            logger.debug("diff_s=%f, cur_time_s=%f, real_time_s=%f", diff_s, cur_time_s, real_time_s)
+            # logger.debug("diff_s=%f, cur_time_s=%f, real_time_s=%f", diff_s, cur_time_s, real_time_s)
             if diff_s >= interval:
                 if video_capture.isOpened():
                     try:
-
                         grabbed = video_capture.grab()
                         if grabbed:
                             time_s = video_capture.get(cv2.CAP_PROP_POS_MSEC) / 1000.
                             if time_s - video_time_s < interval:
                                 continue
 
-                            logger.debug("time_s %f", time_s)
+                            # logger.debug("time_s %f", time_s)
                             frame = loop.run_until_complete(get_frame())
                             if debug:
                                 cv2.imwrite('frame.png', frame)
@@ -116,6 +116,9 @@ def generate_frames():  # generate frame by frame from camera
                             if success:
                                 tracker = trackers.get(current_mode, None)
                                 if tracker is not None:
+                                    if reset:
+                                        tracker.reset()
+                                        reset = False
                                     frame = tracker.online_inference(frame, VIDEO_MASK)
                                 ret, buffer = cv2.imencode('.jpg', frame)
                                 frame = buffer.tobytes()
@@ -162,7 +165,7 @@ def gen_frames():
                 ret, buffer = cv2.imencode('.jpg', out_frame)
                 out_frame = buffer.tobytes()
                 yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + out_frame + b'\r\n')  # concat frame one by one and show result
+                       b'Content-Type: image/jpeg\r\n\r\n' + out_frame + b'\r\n')
             else:
                 counter += 1
 
@@ -205,7 +208,6 @@ def clear_mask():
     return Response(response_message, status=status)
 
 
-
 @app.route('/video_feed')
 def video_feed():
     # Video streaming route. Put this in the src attribute of an img tag
@@ -233,10 +235,15 @@ def parse_request_and_upload(request_obj):
 
 @app.route('/init', methods=["POST"])
 def init():
-    global video_url, video_capture, real_time_s, video_time_s, VIDEO_MASK
+    global video_url, video_capture, real_time_s, video_time_s, VIDEO_MASK, trackers, reset
     response_message = "Initializing..."
     status = 200
     try:
+        reset = True
+        tracker = trackers.get(current_mode, None)
+        if tracker is not None:
+            tracker.reset()
+            logger.debug("%s tracker.reset()", tracker.name())
         video_url = parse_request_and_upload(request)
         print(f"{video_url} is being processed.")
         if video_capture is not None and video_capture.isOpened():

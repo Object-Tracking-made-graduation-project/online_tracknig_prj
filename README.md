@@ -16,8 +16,7 @@ docker pull salos/tracking:v1.0
 
 Для bytetrack они доступны по [ссылке](https://github.com/ifzhang/ByteTrack). Раздел Model Zoo. Загруженные модели необходимо положить в папку `detection_models/bytetrack/pretrained`.
 
-Для IIM нужно переложить [файл](https://cloud.mail.ru/public/tDFV/nTQk76xrY/FDST-HR-ep_177_F1_0.969_Pre_0.984_Rec_0.955_mae_1.0_mse_1.5.pth) в `detection_models/iim/weights`,
-предварительно переименовав его в `FDST-HR.pth` (это название дефолтное в настройках, но путь можно менять).
+Для IIM нужно переложить [файл](https://cloud.mail.ru/public/tDFV/nTQk76xrY/NWPU-HR-ep_241_F1_0.802_Pre_0.841_Rec_0.766_mae_55.6_mse_330.9.pth) в `detection_models/iim/weights`.
 
 
 # Сборка
@@ -25,7 +24,7 @@ docker pull salos/tracking:v1.0
 ```
 docker build -t tracking .
 ```
-Чтобы запустить образ для с необходимыми моделями нужно либо прописать из во флаге use_models, либо в конфиге (`config.yaml`):
+Чтобы запустить образ для с необходимыми моделями нужно либо прописать их во флаге use_models, либо в конфиге `config.yaml` (чтение из конфига будет производиться, если переменная среды `use_models` не указана):
 ```    
 docker run --rm --gpus all -p 8132:8132 -e use_models=iim,bytetrack tracking python3 flask_app.py
 ```
