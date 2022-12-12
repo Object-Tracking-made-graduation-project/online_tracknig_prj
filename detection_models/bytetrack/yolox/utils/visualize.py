@@ -58,7 +58,7 @@ def plot_tracking(image, tlwhs, obj_ids, video_mask, scores=None, frame_id=0, fp
     #text_scale = max(1, image.shape[1] / 1600.)
     #text_thickness = 2
     #line_thickness = max(1, int(image.shape[1] / 500.))
-    text_scale = 2
+    text_scale = 4
     text_thickness = 2
     line_thickness = 3
 
@@ -68,35 +68,39 @@ def plot_tracking(image, tlwhs, obj_ids, video_mask, scores=None, frame_id=0, fp
     counter = 0
     for i, tlwh in enumerate(tlwhs):
         x1, y1, w, h = tlwh
-        intbox = tuple(map(int, (x1, y1, x1 + w, y1 + h)))
+        intbox = list(map(int, (x1, y1, x1 + w, y1 + h)))
         obj_id = int(obj_ids[i])
         id_text = '{}'.format(int(obj_id))
         if ids2 is not None:
             id_text = id_text + ', {}'.format(int(ids2[i]))
         color = get_color(abs(obj_id))
         if video_mask is not None:
-            # получаем центры bb
-            x_center = intbox[0] + int((intbox[2] - intbox[0]) / 2)
-            y_center = intbox[1] + int((intbox[3] - intbox[1]) / 2)
-            # если центр находится в выделенной зоне маски, то рисуем bb, иначе пропускаем
-            if x_center < video_mask.shape[0] and y_center < video_mask.shape[1]:
-                if video_mask[y_center, x_center][3] > 155:
+            # проверяем, не выходит ли bb за границы экрана
+            if intbox[3] > video_mask.shape[0]:
+                intbox[3] = video_mask.shape[0] - 1
+            if intbox[2] > video_mask.shape[1]:
+                intbox[2] = video_mask.shape[1] - 1
+            try:
+                if video_mask[intbox[1], intbox[0]][3] > 240 or video_mask[intbox[3], intbox[2]][3] > 240:
                     cv2.rectangle(im, intbox[0:2], intbox[2:4], color=color, thickness=line_thickness)
                     cv2.putText(im, id_text, (intbox[0], intbox[1]), cv2.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
                                 thickness=text_thickness)
                     counter += 1
+            except Exception as e:
+                print('catched')
         else:
             counter += 1
             cv2.rectangle(im, intbox[0:2], intbox[2:4], color=color, thickness=line_thickness)
             cv2.putText(im, id_text, (intbox[0], intbox[1]), cv2.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
                         thickness=text_thickness)
     cv2.putText(im, 'frame: %d fps: %.2f num: %d' % (frame_id, fps, counter),
-                (0, int(15 * text_scale)), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), thickness=2)
+                (0, int(15 * text_scale)), cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 255), thickness=5)
     # здесь накладываем маску на основную картинку, чтобы выделить фрагмент и затонить остальное
     if video_mask is not None:
-        trans_mask = video_mask[:, :, 3] == 0
-        video_mask[trans_mask] = [105, 105, 105, 255]
-        new_mask = cv2.cvtColor(video_mask, cv2.COLOR_BGRA2BGR)
+        tmp_mask = video_mask.copy()
+        trans_mask = tmp_mask[:, :, 3] == 0
+        tmp_mask[trans_mask] = [105, 105, 105, 255]
+        new_mask = cv2.cvtColor(tmp_mask, cv2.COLOR_BGRA2BGR)
         im = cv2.addWeighted(im, 1.0, new_mask, 0.8, 0.0)
     return im
 

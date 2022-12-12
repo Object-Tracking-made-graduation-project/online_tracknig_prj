@@ -25,9 +25,10 @@ class IimModel(BaseModel):
             # если задана маска то проверяем, находится ли точка в выделенном сегменте
             # если находится, то рисуем, иначе нет
             if video_mask is not None:
-                if video_mask[int(y), int(x)][3] < 155:
-                    counter += 1
-                    cv2.circle(frame, (int(x), int(y)), size, (0, 255, 255), -1)
+                if int(y) < video_mask.shape[0] and int(x) < video_mask.shape[1]:
+                    if video_mask[int(y), int(x)][3] < 155:
+                        counter += 1
+                        cv2.circle(frame, (int(x), int(y)), size, (0, 255, 255), -1)
             else:
                 counter += 1
                 cv2.circle(frame, (int(x), int(y)), size, (0, 255, 255), -1)
@@ -36,10 +37,10 @@ class IimModel(BaseModel):
         frame = cv2.putText(frame, str(counter), (100, 100), font, 4, (0, 255, 255), 10, cv2.LINE_AA)
         # здесь накладываем маску на основную картинку, чтобы выделить фрагмент и затонить остальное
         if video_mask is not None:
-            trans_mask = video_mask[:, :, 3] == 0
-            video_mask[trans_mask] = [105, 105, 105, 255]
-            # video_mask[trans_mask] = [224, 11, 161, 255]
-            new_mask = cv2.cvtColor(video_mask, cv2.COLOR_BGRA2BGR)
+            tmp_mask = video_mask.copy()
+            trans_mask = tmp_mask[:, :, 3] == 0
+            tmp_mask[trans_mask] = [105, 105, 105, 255]
+            new_mask = cv2.cvtColor(tmp_mask, cv2.COLOR_BGRA2BGR)
             frame = cv2.addWeighted(frame, 1.0, new_mask, 0.8, 0.0)
 
         logging.info("Found %d persons", counter)
