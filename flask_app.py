@@ -105,7 +105,6 @@ def generate_frames():  # generate frame by frame from camera
                             time_s = video_capture.get(cv2.CAP_PROP_POS_MSEC) / 1000.
                             if time_s - video_time_s < interval:
                                 continue
-
                             # logger.debug("time_s %f", time_s)
                             frame = loop.run_until_complete(get_frame())
                             if debug:
