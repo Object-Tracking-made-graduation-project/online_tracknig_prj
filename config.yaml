@@ -2,6 +2,7 @@ use_models: "iim,bytetrack"
 frames_num_before_show: 2
 stream: -1
 interval:
-  1: 0.05
-  2: 0.02
-  3: 0.02
+  1: 0.
+  2: 0.
+  3: 0.
+  
