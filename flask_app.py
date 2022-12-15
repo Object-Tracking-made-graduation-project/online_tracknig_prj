@@ -81,37 +81,28 @@ def get_video_obj(url, stream=-1):
 
 async def get_frame():
     ret_val, frame = video_capture.read()
-    return frame
+    return ret_val, frame
 
 
 def generate_frames():  # generate frame by frame from camera
     global real_time_s, video_time_s, video_capture, reset
     loop = asyncio.new_event_loop()
-    debug = True
+    counter = 0
     while True:
         if video_capture is not None:
             interval = service_params.interval.get(current_mode, 0.)
-            if interval <= 0:
-                logger.warning("interval %f s", interval)
+            if counter == service_params.frames_num_before_show:
+                counter = 0
 
-            cur_time_s = time.time()
-            diff_s = cur_time_s - real_time_s
-            # logger.debug("diff_s=%f, cur_time_s=%f, real_time_s=%f", diff_s, cur_time_s, real_time_s)
-            if diff_s >= interval:
-                if video_capture.isOpened():
-                    try:
-                        grabbed = video_capture.grab()
-                        if grabbed:
+                cur_time_s = time.time()
+                diff_s = cur_time_s - real_time_s
+                if diff_s >= interval:
+                    if video_capture.isOpened():
+                        try:
                             time_s = video_capture.get(cv2.CAP_PROP_POS_MSEC) / 1000.
                             if time_s - video_time_s < interval:
                                 continue
-                            # logger.debug("time_s %f", time_s)
-                            frame = loop.run_until_complete(get_frame())
-                            if debug:
-                                cv2.imwrite('frame.png', frame)
-                                debug = False
-                            #success, frame = video_capture.retrieve()
-                            success = True
+                            success, frame = loop.run_until_complete(get_frame())
                             if success:
                                 tracker = trackers.get(current_mode, None)
                                 if tracker is not None:
@@ -126,47 +117,17 @@ def generate_frames():  # generate frame by frame from camera
                                 yield (b'--frame\r\n'
                                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-                        else:
-                            logger.warning("not grabbed")
-                    except Exception as e:
-                        logger.error(str(e))
+                        except Exception as e:
+                            logger.error(str(e))
+                    else:
+                        logger.warning('videocapture is closed. Trying to reopen it.')
+                        video_capture = get_video_obj(video_url)
                 else:
-                    logger.warning('videocapture is closed. Trying to open it again.')
-                    video_capture = get_video_obj(video_url)
-            else:
-                if interval - diff_s < 30.:
-                    time.sleep(interval - diff_s)
-        time.sleep(0.001)
-
-
-def gen_frames():
-    """
-    здесь получаем кадр с потока, получаем по нему инференс с модели и отправляем на форму
-    """
-    global video_capture
-    counter = 0
-    # if not video_capture:
-    # raise ValueError("video_capture is empty")
-
-    loop = asyncio.new_event_loop()
-    while True:
-        if video_capture is not None:
-            # while video_capture.isOpened():
-            # объект определили заранее, теперь читаем кадр и отправляем в модель
-            frame = loop.run_until_complete(get_frame())
-            if counter == service_params.frames_num_before_show:
-                counter = 0
-                tracker = trackers.get(current_mode, None)
-                if tracker is not None:
-                    out_frame = tracker.online_inference(frame, VIDEO_MASK)
-                else:
-                    out_frame = frame
-                ret, buffer = cv2.imencode('.jpg', out_frame)
-                out_frame = buffer.tobytes()
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + out_frame + b'\r\n')
+                    if interval - diff_s < 30.:
+                        time.sleep(interval - diff_s)
             else:
                 counter += 1
+        time.sleep(0.001)
 
 
 @app.route('/ping')
