@@ -81,7 +81,7 @@ def get_video_obj(url, stream=-1):
 
 async def get_frame():
     ret_val, frame = video_capture.read()
-    return ret_val, frame
+    return frame
 
 
 def generate_frames():  # generate frame by frame from camera
@@ -90,19 +90,37 @@ def generate_frames():  # generate frame by frame from camera
     counter = 0
     while True:
         if video_capture is not None:
-            interval = service_params.interval.get(current_mode, 0.)
-            if counter == service_params.frames_num_before_show:
-                counter = 0
+            if current_mode == 1:
+                # объект определили заранее, теперь читаем кадр и отправляем на веб морду
+                try:
+                    frame = loop.run_until_complete(get_frame())
+                    if frame is not None:
+                        ret, buffer = cv2.imencode('.jpg', frame)
+                        frame = buffer.tobytes()
+                        yield (b'--frame\r\n'
+                               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
+                except Exception as e:
+                    print("catched")
 
-                cur_time_s = time.time()
-                diff_s = cur_time_s - real_time_s
-                if diff_s >= interval:
+            else:
+                interval = service_params.interval.get(current_mode, 0.)
+                if counter == service_params.frames_num_before_show:
+                    counter = 0
+
+                    cur_time_s = time.time()
+                    diff_s = cur_time_s - real_time_s
+                    #if diff_s >= interval:
                     if video_capture.isOpened():
                         try:
                             time_s = video_capture.get(cv2.CAP_PROP_POS_MSEC) / 1000.
                             if time_s - video_time_s < interval:
                                 continue
-                            success, frame = loop.run_until_complete(get_frame())
+                            frame = loop.run_until_complete(get_frame())
+                            #success, frame = loop.run_until_complete(get_frame())
+                            if frame is not None:
+                                success = True
+                            else:
+                                success = False
                             if success:
                                 tracker = trackers.get(current_mode, None)
                                 if tracker is not None:
@@ -122,11 +140,11 @@ def generate_frames():  # generate frame by frame from camera
                     else:
                         logger.warning('videocapture is closed. Trying to reopen it.')
                         video_capture = get_video_obj(video_url)
+                    #else:
+                        #if interval - diff_s < 30.:
+                            #time.sleep(interval - diff_s)
                 else:
-                    if interval - diff_s < 30.:
-                        time.sleep(interval - diff_s)
-            else:
-                counter += 1
+                    counter += 1
         time.sleep(0.001)
 
 

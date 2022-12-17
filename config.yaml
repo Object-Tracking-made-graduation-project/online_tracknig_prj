@@ -1,5 +1,5 @@
 use_models: "iim,bytetrack"
-frames_num_before_show: 2
+frames_num_before_show: 3
 stream: -1
 interval:
   1: 0.
