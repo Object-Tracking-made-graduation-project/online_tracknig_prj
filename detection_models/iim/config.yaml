@@ -1,4 +1,4 @@
 weight_path: "./detection_models/iim/weights/NWPU-HR-ep_241_F1_0.802_Pre_0.841_Rec_0.766_mae_55.6_mse_330.9.pth"
 gpu_id: "0"
 highlight_heads: false
-smoothing_queue_size: 10
+smoothing_queue_size: 150
