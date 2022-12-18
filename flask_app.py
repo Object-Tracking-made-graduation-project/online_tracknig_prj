@@ -163,6 +163,11 @@ def load_inference_mask():
     try:
         img_path = parse_request_and_upload(request)
         VIDEO_MASK = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+
+        tracker = trackers.get(current_mode, None)
+        if tracker is not None:
+            tracker.reset()
+
         response_message = f"mask loaded."
         logger.info(response_message)
         status = 200
@@ -180,6 +185,9 @@ def clear_mask():
     """
     global VIDEO_MASK
     VIDEO_MASK = None
+    tracker = trackers.get(current_mode, None)
+    if tracker is not None:
+        tracker.reset()
     response_message = 'mask deleted'
     logger.info(response_message)
     status = 200
