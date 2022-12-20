@@ -15,8 +15,14 @@ docker pull salos/tracking:v1.0
 Перед загрузкой необходимо заранее загрузить модели. 
 
 Для bytetrack они доступны по [ссылке](https://cloud.mail.ru/public/tDFV/nTQk76xrY/bytetrack_s_mot17.pth.tar). Раздел Model Zoo. Загруженные модели необходимо положить в папку `detection_models/bytetrack/pretrained`.
+```
+wget http://salosyatov.ru/models/bytetrack_s_mot17.pth.tar -P ./detection_models/bytetrack/pretrained
+```
 
 Для IIM нужно переложить [файл](https://cloud.mail.ru/public/tDFV/nTQk76xrY/NWPU-HR-ep_241_F1_0.802_Pre_0.841_Rec_0.766_mae_55.6_mse_330.9.pth) в `detection_models/iim/weights`.
+```
+wget http://salosyatov.ru/models/NWPU-HR-ep_241_F1_0.802_Pre_0.841_Rec_0.766_mae_55.6_mse_330.9.pth -P ./detection_models/iim/weights
+```
 
 
 # Сборка
